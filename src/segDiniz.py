@@ -19,16 +19,66 @@ class segDiniz():
         # First step: load dataset
         self.load_training_set()
 
+        self.load_validation_set()
+
         # Second step: loss function
         self.init_loss_function()
 
-        #Third step: model
+        # Third step: model
         self.init_model()
 
-        #Forth step: optimizer
+        # Forth step: optimizer
         self.init_optimizer()
 
-    def execute(self, epoch_index, tb_writer):
+        # Fifth step: execution of the epochs
+        #timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        #writer = SummaryWriter('runs/fashion_trainer_{}'.format(timestamp))
+        epoch_number = 0
+
+        EPOCHS = 5
+
+        best_vloss = 1_000_000.
+
+        for epoch in range(EPOCHS):
+            print('EPOCH {}:'.format(epoch_number + 1))
+
+            # Make sure gradient tracking is on, and do a pass over the data
+            self.model.train(True)
+            avg_loss = self.train_one_epoch(epoch_number)
+
+
+            running_vloss = 0.0
+            # Set the model to evaluation mode, disabling dropout and using population
+            # statistics for batch normalization.
+            self.model.eval()
+
+            # Disable gradient computation and reduce memory consumption.
+            with torch.no_grad():
+                for i, vdata in enumerate(self.validation_loader):
+                    vinputs, vlabels = vdata
+                    voutputs = self.model(vinputs)
+                    vloss = self.loss_fn(voutputs, vlabels)
+                    running_vloss += vloss
+
+            avg_vloss = running_vloss / (i + 1)
+            print('LOSS train {} valid {}'.format(avg_loss, avg_vloss))
+
+            # Log the running loss averaged per batch
+            # for both training and validation
+            #writer.add_scalars('Training vs. Validation Loss',
+            #                { 'Training' : avg_loss, 'Validation' : avg_vloss },
+            #                epoch_number + 1)
+            #writer.flush()
+
+            # Track best performance, and save the model's state
+            if avg_vloss < best_vloss:
+                best_vloss = avg_vloss
+                model_path = 'model_{}_{}'.format("opa", epoch_number)
+                torch.save(self.model.state_dict(), model_path)
+
+            epoch_number += 1
+
+    def train_one_epoch(self, epoch_index):
         running_loss = 0.
         last_loss = 0.
 
@@ -58,7 +108,7 @@ class segDiniz():
                 last_loss = running_loss / 1000 # loss per batch
                 print('  batch {} loss: {}'.format(i + 1, last_loss))
                 tb_x = epoch_index * len(self.training_loader) + i + 1
-                tb_writer.add_scalar('Loss/train', last_loss, tb_x)
+                #tb_writer.add_scalar('Loss/train', last_loss, tb_x)
                 running_loss = 0.
 
         return last_loss
@@ -90,3 +140,21 @@ class segDiniz():
         )
 
         print('Trainig set initialized successfully: it has {} instances'.format(len(self.training_set)))
+
+    def load_validation_set(self):
+        # Initialize validation dataset
+        self.validation_set = datasets.Cityscapes(
+            root="../data/cityscapes/", 
+            split="val", 
+            target_type="semantic"
+        )
+
+        # Initialize validation dataloader
+        self.validation_loader = torch.utils.data.DataLoader(
+            self.validation_set, 
+            batch_size=4, 
+            shuffle=True
+        )
+
+        print('Validation set initialized successfully: it has {} instances'.format(len(self.validation_set)))
+        pass
