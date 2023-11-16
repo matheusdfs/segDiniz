@@ -206,10 +206,12 @@ class segDiniz():
             target_type="semantic",
             transform=transforms.Compose([
                 #transforms.Resize((512, 512)),
+                transforms.CenterCrop((1280, 720)),
                 transforms.ToTensor()
             ]),
             target_transform=transforms.Compose([
                 #transforms.Resize((512, 512)),
+                transforms.CenterCrop((1280, 720)),
                 transforms.ToTensor()
             ])
         )
@@ -231,10 +233,12 @@ class segDiniz():
             target_type="semantic",
             transform=transforms.Compose([
                 #transforms.Resize((512, 512)),
+                transforms.CenterCrop((1280, 720)),
                 transforms.ToTensor()
             ]),
             target_transform=transforms.Compose([
                 #transforms.Resize((512, 512)),
+                transforms.CenterCrop((1280, 720)),
                 transforms.ToTensor()
             ])
         )
