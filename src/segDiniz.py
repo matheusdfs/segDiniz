@@ -297,5 +297,7 @@ def coco2cityscapes(predict):
                 output[i][j] = 13
             elif tensor == 15:
                 output[i][j] = 11
+            else:
+                output[i][j] = 0
 
     return output
